@@ -74,3 +74,142 @@ describe('Suíte de Testes Fraca para 50 Operações Aritméticas', () => {
   test('49. deve calcular o triplo de um número', () => { expect(triplo(10)).toBe(30); });
   test('50. deve calcular a metade de um número', () => { expect(metade(20)).toBe(10); });
 });
+
+describe('Testes Adicionais para Matar Mutantes Sobreviventes', () => {
+  // --- divisao: mensagem de erro e guard ---
+  test('divisao: mensagem exata ao dividir por zero', () => {
+    expect(() => divisao(5, 0)).toThrow('Divisão por zero não é permitida.');
+  });
+
+  // --- raizQuadrada: guard n<0 (mutantes 15, 16) e mensagem (18) ---
+  test('raizQuadrada: lança erro com mensagem exata para n negativo', () => {
+    expect(() => raizQuadrada(-1)).toThrow('Não é possível calcular a raiz quadrada de um número negativo.');
+  });
+  test('raizQuadrada: aceita zero (fronteira do operador <)', () => {
+    expect(raizQuadrada(0)).toBe(0);
+  });
+
+  // --- fatorial: guards e casos base (mutantes 23, 24, 26, 28, 29, 30, 32) ---
+  test('fatorial: lança erro com mensagem exata para n negativo', () => {
+    expect(() => fatorial(-1)).toThrow('Fatorial não é definido para números negativos.');
+  });
+  test('fatorial: caso base 0 retorna 1', () => { expect(fatorial(0)).toBe(1); });
+  test('fatorial: caso base 1 retorna 1', () => { expect(fatorial(1)).toBe(1); });
+  test('fatorial: 2 retorna 2 (ramo do laço, distingue de retorno fixo 1)', () => {
+    expect(fatorial(2)).toBe(2);
+  });
+
+  // --- mediaArray (42) ---
+  test('mediaArray: array vazio retorna 0', () => { expect(mediaArray([])).toBe(0); });
+
+  // --- maximoArray / minimoArray: vazios + mensagens (50, 52, 56, 58) ---
+  test('maximoArray: array vazio lança erro com mensagem exata', () => {
+    expect(() => maximoArray([])).toThrow('Array vazio не possui valor máximo.');
+  });
+  test('minimoArray: array vazio lança erro com mensagem exata', () => {
+    expect(() => minimoArray([])).toThrow('Array vazio не possui valor mínimo.');
+  });
+
+  // --- isPar / isImpar: ramos negativos (63, 68, 71) ---
+  test('isPar: número ímpar retorna false', () => { expect(isPar(3)).toBe(false); });
+  test('isImpar: número par retorna false', () => { expect(isImpar(2)).toBe(false); });
+  // mutante 71 troca n%2 por n*2; isImpar(4): 4%2=0 → false; mutado: 4*2=8 (truthy) → !==0 dá true. Mata.
+
+  // --- isPrimo: guards e laço (110, 111, 113, 114, 116, 118, 120, 122, 123) ---
+  test('isPrimo: 1 não é primo (fronteira do <=)', () => { expect(isPrimo(1)).toBe(false); });
+  test('isPrimo: 0 não é primo', () => { expect(isPrimo(0)).toBe(false); });
+  test('isPrimo: 2 é primo (laço não executa)', () => { expect(isPrimo(2)).toBe(true); });
+  test('isPrimo: 4 não é primo (mata mutante n%i → n*i e fim do laço)', () => {
+    expect(isPrimo(4)).toBe(false);
+  });
+  test('isPrimo: 9 não é primo (composto ímpar)', () => { expect(isPrimo(9)).toBe(false); });
+
+  // --- produtoArray (135) ---
+  test('produtoArray: array vazio retorna 1', () => { expect(produtoArray([])).toBe(1); });
+  test('produtoArray: guard de length é checado antes de reduce (mata mutante que remove guard)', () => {
+    // Objeto array-like com length=0 e SEM reduce: o guard original retorna 1 sem tocar em reduce.
+    // O mutante (guard false) pula o guard e tenta chamar reduce, lançando TypeError.
+    expect(produtoArray({ length: 0 })).toBe(1);
+  });
+
+  // --- clamp: fronteiras (141, 142, 145, 146) ---
+  test('clamp: valor abaixo do mínimo é elevado ao mínimo', () => {
+    expect(clamp(-5, 0, 10)).toBe(0);
+  });
+  test('clamp: valor acima do máximo é reduzido ao máximo', () => {
+    expect(clamp(15, 0, 10)).toBe(10);
+  });
+  test('clamp: valor igual ao mínimo permanece (mata <=)', () => {
+    expect(clamp(0, 0, 10)).toBe(0);
+  });
+  test('clamp: valor igual ao máximo permanece (mata >=)', () => {
+    expect(clamp(10, 0, 10)).toBe(10);
+  });
+  test('clamp: distingue < de <= na fronteira via -0 (mata mutante valor <= min)', () => {
+    // valor=+0, min=-0: original +0 < -0 é false (porque +0 === -0), retorna valor=+0.
+    // Mutante +0 <= -0 é true, retorna min=-0.
+    // Object.is(+0, -0) === false, então toBe distingue.
+    expect(clamp(0, -0, 10)).toBe(0);
+  });
+  test('clamp: distingue > de >= na fronteira via -0 (mata mutante valor >= max)', () => {
+    // valor=-0, max=+0: original -0 > 0 é false, retorna valor=-0.
+    // Mutante -0 >= 0 é true, retorna max=+0.
+    expect(clamp(-0, -10, 0)).toBe(-0);
+  });
+
+  // --- isDivisivel (149) ---
+  test('isDivisivel: retorna false quando há resto', () => {
+    expect(isDivisivel(10, 3)).toBe(false);
+  });
+
+  // --- temperatura: matam mutantes aritméticos (155, 156, 158, 159) ---
+  test('celsiusParaFahrenheit: 100°C = 212°F', () => {
+    expect(celsiusParaFahrenheit(100)).toBe(212);
+  });
+  test('fahrenheitParaCelsius: 212°F = 100°C', () => {
+    expect(fahrenheitParaCelsius(212)).toBe(100);
+  });
+
+  // --- inverso (163, 165) ---
+  test('inverso: zero lança erro com mensagem exata', () => {
+    expect(() => inverso(0)).toThrow('Não é possível inverter o número zero.');
+  });
+
+  // --- isMaiorQue / isMenorQue / isEqual: ramos false (175, 177, 180, 182, 185) ---
+  test('isMaiorQue: valores iguais retornam false (mata >=)', () => {
+    expect(isMaiorQue(5, 5)).toBe(false);
+  });
+  test('isMaiorQue: a < b retorna false', () => {
+    expect(isMaiorQue(3, 7)).toBe(false);
+  });
+  test('isMenorQue: valores iguais retornam false (mata <=)', () => {
+    expect(isMenorQue(5, 5)).toBe(false);
+  });
+  test('isMenorQue: a > b retorna false', () => {
+    expect(isMenorQue(7, 3)).toBe(false);
+  });
+  test('isEqual: valores diferentes retornam false', () => {
+    expect(isEqual(1, 2)).toBe(false);
+  });
+
+  // --- medianaArray: array vazio + ordenação + tamanho par (190, 192, 193, 195, 196, 199, 201, 202, 203, 204, 205) ---
+  test('medianaArray: array vazio lança erro com mensagem exata', () => {
+    expect(() => medianaArray([])).toThrow('Array vazio не possui mediana.');
+  });
+  test('medianaArray: ordena array desordenado antes de calcular', () => {
+    // Sem sort, [3,1,2,4] daria (1+2)/2=1.5; com sort, mediana é (2+3)/2=2.5
+    expect(medianaArray([3, 1, 2, 4])).toBe(2.5);
+  });
+  test('medianaArray: tamanho par calcula média dos dois centrais', () => {
+    expect(medianaArray([1, 2, 3, 4])).toBe(2.5);
+  });
+  test('medianaArray: tamanho par com elementos distintos (mata mid-1 e divisão)', () => {
+    // [10,20,30,40] → (20+30)/2 = 25. mid+1 → (30+40)/2=35. *2 → 100. -sorted[mid] → -10.
+    expect(medianaArray([10, 20, 30, 40])).toBe(25);
+  });
+  test('medianaArray: comparador a-b ordena ascendentemente (mata ArrowFunction => undefined e a+b)', () => {
+    // Sem comparador correto, [10,2,30,4].sort() default seria lexical: ['10','2','30','4'] → [10,2,30,4] como string.
+    // Com a-b: [2,4,10,30] → mediana (4+10)/2 = 7.
+    expect(medianaArray([10, 2, 30, 4])).toBe(7);
+  });
+});
