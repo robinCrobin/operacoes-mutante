@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório — Análise de Eficácia de Testes com Teste de Mutação</title>
+<style>
+  @page { size: A4; margin: 22mm 20mm; }
+  html { font-size: 11pt; }
+  body { font-family: "Calibri", "Segoe UI", Arial, sans-serif; color:#111; line-height:1.45; max-width: 175mm; margin: 0 auto; }
+  h1, h2, h3 { color:#1a3a6c; margin-top: 1.4em; }
+  h1 { font-size: 1.55rem; }
+  h2 { font-size: 1.15rem; border-bottom: 1px solid #cfd8e3; padding-bottom: 2px; }
+  h3 { font-size: 1.0rem; margin-bottom: .2em; }
+  p, li { text-align: justify; }
+  code, pre { font-family: Consolas, "Courier New", monospace; }
+  pre { background:#f4f6fa; border:1px solid #d8dee9; padding:8px 10px; border-radius:6px; font-size: 9.5pt; overflow-x:auto; }
+  .cover { text-align:center; padding-top: 60mm; page-break-after: always; }
+  .cover h1 { font-size: 1.8rem; margin-bottom: .2em; }
+  .cover .meta { margin-top: 60mm; line-height: 2; font-size: 1.05rem; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 14px; font-size: 10pt; }
+  th, td { border: 1px solid #c7d0db; padding: 5px 8px; text-align: center; }
+  th { background:#eaf0f8; }
+  td.metric, th.metric { text-align:left; }
+  .delta-up { color:#1b7a36; font-weight:600; }
+  .delta-down { color:#a01b1b; font-weight:600; }
+  figure { margin: 10px 0; text-align:center; page-break-inside: avoid; }
+  figure img { max-width: 100%; border:1px solid #d8dee9; border-radius:4px; }
+  figcaption { font-size: 9.5pt; color:#555; margin-top: 4px; }
+  .placeholder { border:2px dashed #b8c2d1; padding:18px; color:#6b7280; text-align:center; border-radius:6px; }
+  .two-col { display:flex; gap:14px; }
+  .two-col > * { flex:1; }
+  .callout { background:#fff7e6; border-left:4px solid #f0ad4e; padding:8px 12px; border-radius:4px; margin: 10px 0; }
+  @media print { .noprint { display:none; } a { color: inherit; text-decoration: none; } }
+  .noprint { background:#eaf0f8; padding:10px 14px; border-radius:6px; margin-bottom: 14px; font-size: 10pt; }
+</style>
+</head>
+<body>
+<!-- ===================== CAPA ===================== -->
+<section class="cover">
+  <div><strong>Disciplina:</strong> Teste de Software</div>
+  <div><strong>Aluno(a):</strong> Roberta Sophia Silva</div>
+  <div><strong>Matrícula:</strong> 839631</div>
+  <div><strong>Data:</strong> 10/05/26</div>
+</section>
+
+<!-- ===================== 1. ANÁLISE INICIAL ===================== -->
+<h2>1. Análise Inicial</h2>
+
+<p>
+O projeto tem 50 funções de matemática em <code>src/operacoes.js</code> e uma suíte de testes de propósito fraca em <code>test/operacoes.test.js</code>. A ideia é exatamente essa: mostrar que dá pra ter cobertura alta e mesmo assim os testes serem ruins.
+</p>
+
+<h3>1.1 Cobertura de código (Jest)</h3>
+
+<table>
+  <thead>
+    <tr><th class="metric">Métrica</th><th>% Statements</th><th>% Branches</th><th>% Functions</th><th>% Lines</th><th>Testes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="metric">Inicial (50 testes)</td><td>85,41%</td><td>58,82%</td><td>100%</td><td>98,64%</td><td>50</td></tr>
+  </tbody>
+</table>
+
+<figure>
+  <img src="cobertura.png" alt="Relatório de cobertura inicial do Jest">
+  <figcaption>Figura 1 — Saída de <code>npm test -- --coverage</code> antes de mexer nos testes.</figcaption>
+</figure>
+
+<h3>1.2 Pontuação de mutação (StrykerJS)</h3>
+
+<table>
+  <thead>
+    <tr><th class="metric">Execução</th><th>Mutantes</th><th>Killed</th><th>Survived</th><th>Timeout</th><th>Mutation Score</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="metric">Inicial</td><td>213</td><td>147</td><td>48</td><td>18</td><td><strong>77,46%</strong></td></tr>
+  </tbody>
+</table>
+
+<figure>
+  <img src="mutacao.png" alt="Resumo do StrykerJS na execução inicial">
+  <figcaption>Figura 2 — Saída do <code>npx stryker run</code> antes de mexer nos testes.</figcaption>
+</figure>
+
+<h3>1.3 Por que os números são tão diferentes</h3>
+
+<p>
+A cobertura de linhas tá em <strong>98,64%</strong> e a de funções em <strong>100%</strong>, então olhando só pra cobertura a suíte parece ótima. Mas o Stryker mostrou <strong>77,46%</strong> de mutation score, ou seja, mais ou menos 1 a cada 4 mutantes passou batido pelos testes.
+</p>
+
+<p>
+A explicação é simples: os testes originais só checavam o caso feliz de cada função. <code>soma(2,3)</code>, <code>isPar(100)</code>, <code>isMaiorQue(10,5)</code>... isso até roda a linha, mas não testa fronteira, não testa o caso que retorna <code>false</code>, não testa array vazio e não verifica a mensagem do erro. A cobertura de branches já tava em 58,82%, que era um sinal de que muito ramo do <code>if</code> nem chegava a ser executado.
+</p>
+
+<!-- ===================== 2. MUTANTES CRÍTICOS ===================== -->
+<h2>2. Análise de Mutantes Críticos</h2>
+
+<p>Escolhi três mutantes que mostram bem os três tipos de fraqueza que apareceram na suíte: falta de teste na fronteira, falta de teste no caso que retorna <code>false</code>, e teste que depende de uma pré-condição que nunca é checada.</p>
+
+<!-- ===== Mutante 1: clamp ===== -->
+<h3>2.1 Mutante #1 — <code>clamp</code> trocando <code>&lt;</code> por <code>&lt;=</code></h3>
+
+<p><strong>Arquivo:</strong> <code>src/operacoes.js</code> · linha 88 · <strong>Mutator:</strong> EqualityOperator</p>
+
+<pre>// Original
+if (valor &lt; min) return min;
+
+// Mutante (sobreviveu)
+if (valor &lt;= min) return min;</pre>
+
+<p>
+O teste original (<em>“36. deve manter um valor dentro de um intervalo (clamp)”</em>) chamava só <code>clamp(5, 0, 10)</code>. Como o 5 tá no meio do intervalo, tanto o código original quanto o mutado retornam 5. O mutante só mudaria o resultado se eu testasse exatamente <code>valor === min</code>, e isso não tinha. A mesma coisa aconteceu na linha de baixo, com <code>&gt;</code> virando <code>&gt;=</code>.
+</p>
+
+<!-- ===== Mutante 2: comparações ===== -->
+<h3>2.2 Mutante #2 — <code>isMaiorQue</code> trocando <code>&gt;</code> por <code>&gt;=</code></h3>
+
+<p><strong>Arquivo:</strong> <code>src/operacoes.js</code> (função <code>isMaiorQue</code>) · <strong>Mutator:</strong> EqualityOperator</p>
+
+<pre>// Original
+return a &gt; b;
+
+// Mutante (sobreviveu)
+return a &gt;= b;</pre>
+
+<p>
+O teste original era só <code>isMaiorQue(10, 5) === true</code>. Faz sentido que tenha sobrevivido: <code>10 &gt; 5</code> é <code>true</code> e <code>10 &gt;= 5</code> também é <code>true</code>, então o teste passa nos dois casos. O único valor de <code>a</code> e <code>b</code> que distingue os dois operadores é quando eles são iguais, e esse caso não tava na suíte. O mesmo problema apareceu em <code>isMenorQue</code> e <code>isEqual</code>.
+</p>
+
+<!-- ===== Mutante 3: medianaArray ===== -->
+<h3>2.3 Mutante #3 — <code>medianaArray</code> sem o comparador do <code>sort</code></h3>
+
+<p><strong>Arquivo:</strong> <code>src/operacoes.js</code> (função <code>medianaArray</code>) · <strong>Mutator:</strong> ArrowFunction / ArithmeticOperator</p>
+
+<pre>// Original
+const sorted = [...numeros].sort((a, b) =&gt; a - b);
+
+// Mutantes (sobreviveram):
+//  (a) sort sem comparador → ordena como string
+//  (b) (a, b) =&gt; a + b → comparador que não ordena nada direito</pre>
+
+<p>
+O teste original usava <code>[1, 2, 3, 4, 5]</code>, que já tá ordenado. Se o array já tá em ordem, tanto faz se o <code>sort</code> tem comparador ou não, o resultado é o mesmo. Pra matar esse mutante, eu precisava passar um array bagunçado em que a ordem lexicográfica (a do <code>sort</code> sem comparador) fosse diferente da ordem numérica.
+</p>
+
+<!-- ===================== 3. SOLUÇÃO IMPLEMENTADA ===================== -->
+<h2>3. Solução Implementada</h2>
+
+<p>
+Adicionei um novo bloco <code>describe</code> chamado <em>“Testes Adicionais para Matar Mutantes Sobreviventes”</em> no <code>test/operacoes.test.js</code>, com <strong>39 testes novos</strong>. A ideia geral foi:
+</p>
+
+<ul>
+  <li>Testar a <strong>fronteira</strong> dos operadores (pra matar mutantes de <code>&lt;</code>/<code>&lt;=</code> e <code>&gt;</code>/<code>&gt;=</code>).</li>
+  <li>Testar o caso que retorna <strong>false</strong> ou que <strong>lança erro</strong>, não só o caso feliz.</li>
+  <li>Conferir a <strong>mensagem exata</strong> do erro com <code>toThrow('...')</code>.</li>
+  <li>Testar <strong>array vazio</strong> e outros casos especiais que escondiam mutantes nos <em>guards</em>.</li>
+  <li>Usar entradas que <strong>dependem da pré-condição</strong> — no caso da mediana, um array desordenado.</li>
+</ul>
+
+<h3>3.1 Testes que mataram os mutantes acima</h3>
+
+<pre>// Mutante #1 — clamp: testar a fronteira dos dois lados
+test('clamp: valor igual ao mínimo permanece (mata &lt;=)', () =&gt; {
+  expect(clamp(0, 0, 10)).toBe(0);
+});
+test('clamp: valor igual ao máximo permanece (mata &gt;=)', () =&gt; {
+  expect(clamp(10, 0, 10)).toBe(10);
+});
+
+// Mutante #2 — isMaiorQue / isMenorQue: testar quando a === b
+test('isMaiorQue: valores iguais retornam false (mata &gt;=)', () =&gt; {
+  expect(isMaiorQue(5, 5)).toBe(false);
+});
+test('isMenorQue: valores iguais retornam false (mata &lt;=)', () =&gt; {
+  expect(isMenorQue(5, 5)).toBe(false);
+});
+
+// Mutante #3 — medianaArray: passar um array fora de ordem
+test('medianaArray: ordena array desordenado antes de calcular', () =&gt; {
+  expect(medianaArray([3, 1, 2, 4])).toBe(2.5);
+});
+test('medianaArray: comparador a-b ordena ascendentemente', () =&gt; {
+  // Sem comparador, [10,2,30,4].sort() ordenaria como string.
+  // Com a-b: [2,4,10,30] → mediana (4+10)/2 = 7
+  expect(medianaArray([10, 2, 30, 4])).toBe(7);
+});</pre>
+
+<h3>3.2 Por que esses testes funcionam</h3>
+
+<p>
+Cada teste foi pensado pra dar um resultado <strong>diferente entre o código original e o mutante</strong> — esse é o jeito do Stryker considerar o mutante morto. Os testes do <code>clamp</code> e das comparações batem exatamente no <code>a === b</code>, que é o único caso onde <code>&lt;</code> se comporta diferente de <code>&lt;=</code> e <code>&gt;</code> se comporta diferente de <code>&gt;=</code>. Os testes da <code>medianaArray</code> usam arrays em que ordenar como string daria um resultado diferente de ordenar como número, então o comparador <code>(a, b) =&gt; a - b</code> finalmente passa a fazer diferença pro resultado.
+</p>
+
+<p>
+A mesma lógica foi aplicada nas outras funções: <code>fatorial</code>, <code>raizQuadrada</code> e <code>inverso</code> ganharam testes que conferem a mensagem do erro; <code>isPar</code>, <code>isImpar</code> e <code>isPrimo</code> ganharam casos negativos e fronteiras (<code>n=1</code>, <code>n=2</code>); <code>produtoArray</code>, <code>maximoArray</code>, <code>minimoArray</code> e <code>medianaArray</code> ganharam o teste de array vazio.
+</p>
+
+<!-- ===================== 4. RESULTADOS FINAIS ===================== -->
+<h2>4. Resultados Finais</h2>
+
+<table>
+  <thead>
+    <tr><th class="metric">Indicador</th><th>Inicial</th><th>Final</th><th>Variação</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="metric">Total de mutantes</td><td>213</td><td>213</td><td>—</td></tr>
+    <tr><td class="metric">Killed</td><td>147</td><td>206</td><td class="delta-up">+59</td></tr>
+    <tr><td class="metric">Survived</td><td>48</td><td>4</td><td class="delta-up">−44</td></tr>
+    <tr><td class="metric">Timeout</td><td>18</td><td>3</td><td class="delta-up">−15</td></tr>
+    <tr><td class="metric"><strong>Mutation Score</strong></td><td><strong>77,46%</strong></td><td><strong>98,12%</strong></td><td class="delta-up">+20,66 p.p.</td></tr>
+    <tr><td class="metric">Nº de testes</td><td>50</td><td>89</td><td class="delta-up">+39</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  O score final ficou em <strong>98,12%</strong>, acima da meta de 98% do enunciado, com <strong>206 dos 213 mutantes mortos</strong>. Tudo isso só adicionando testes — o <code>src/operacoes.js</code> não foi alterado.
+</div>
+
+<figure>
+  <img src="mutacao-final.png" alt="Resumo final do StrykerJS após os testes adicionais">
+  <figcaption>Figura 3 — Saída do <code>npx stryker run</code> depois dos testes adicionais (98,12%).</figcaption>
+</figure>
+
+<!-- ===================== 5. CONCLUSÃO ===================== -->
+<h2>5. Conclusão</h2>
+
+<p>
+O trabalho deixou bem claro uma coisa que a gente já tinha visto na teoria: <strong>cobertura mede se a linha foi executada, não se o teste de fato verifica alguma coisa</strong>. A suíte original tinha 98,64% de cobertura de linhas, mas deixava passar 22,5% das mutações — e essas mutações eram bugs perfeitamente plausíveis, do tipo que poderia entrar num <em>commit</em> sem ninguém perceber.
+</p>
+
+<p>
+O teste de mutação ajudou de dois jeitos. Primeiro, ele aponta exatamente onde a suíte tá fraca: cada mutante sobrevivente é uma dica direta (“não tem teste pra <code>a === b</code>”, “não tem teste pra array vazio”, “a mensagem do erro nunca é checada”). Segundo, ele força a gente a escrever testes mais variados, em vez de só repetir o caso feliz. O ganho de <strong>+20,66 pontos percentuais</strong> de um run pro outro foi conseguido sem mexer no código de produção, o que mostra que a melhoria veio só da qualidade dos testes.
+</p>
+
+<p>
+Pra fechar: usar teste de mutação no dia a dia, mesmo que só em partes mais críticas do projeto (porque ele demora pra rodar), funciona como um “revisor chato” da suíte de testes. Ele completa a cobertura tradicional e dá uma confiança bem maior de que os testes vão pegar os bugs de verdade.
+</p>
+
+</body>
+</html>
